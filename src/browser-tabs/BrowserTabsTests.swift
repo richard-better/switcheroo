@@ -591,6 +591,28 @@ final class BrowserTabsTests: XCTestCase {
         XCTAssertEqual(TitlesStyle.panelHeight(rowsHeight: 2000, screenHeight: 900, showsSearch: false), 876)
     }
 
+    func testSelectionFillsAreVisibleAndHoverStaysWeakerThanSelection() throws {
+        let cases: [(NSAppearance.Name, CGFloat, CGFloat)] = [(.vibrantLight, 0.18, 0.09), (.vibrantDark, 0.20, 0.10)]
+        for (name, selection, hover) in cases {
+            let view = NSView()
+            view.appearance = NSAppearance(named: name)
+            view.withDrawingAppearance {
+                XCTAssertEqual(TitlesStyle.selectionBackground.cgColor.alpha, selection, accuracy: 0.001)
+                XCTAssertEqual(TitlesStyle.hoverBackground.cgColor.alpha, hover, accuracy: 0.001)
+            }
+        }
+    }
+
+    func testSelectionFillFollowsThePanelNotTheAmbientAppearance() throws {
+        let view = NSView()
+        view.appearance = NSAppearance(named: .vibrantDark)
+        var white: CGFloat?
+        NSAppearance(named: .aqua)!.performAsCurrentDrawingAppearance {
+            view.withDrawingAppearance { white = TitlesStyle.selectionBackground.cgColor.components?.first }
+        }
+        XCTAssertEqual(try XCTUnwrap(white), 1, accuracy: 0.001)
+    }
+
     private func findButton(_ view: NSView, title: String) -> NSButton? {
         if let button = view as? NSButton, button.title == title { return button }
         return view.subviews.lazy.compactMap { self.findButton($0, title: title) }.first

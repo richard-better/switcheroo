@@ -36,6 +36,11 @@ class TileUnderLayer: CALayer {
             height: hf.height
         )
         highlightLayer.frame = rect
+        view.withDrawingAppearance { applyColors(highlightLayer, isFocused: isFocused) }
+        highlightLayer.isHidden = false
+    }
+
+    private func applyColors(_ highlightLayer: CALayer, isFocused: Bool) {
         if isFocused, Preferences.effectiveAppearanceStyle(SwitcherSession.activeShortcutIndex) == .titles {
             TitlesStyle.applySelection(
                 highlightLayer,
@@ -52,6 +57,5 @@ class TileUnderLayer: CALayer {
                 : Appearance.highlightHoveredBorderColor).cgColor
             highlightLayer.borderWidth = Appearance.highlightBorderWidth
         }
-        highlightLayer.isHidden = false
     }
 }
