@@ -206,12 +206,15 @@ class KeyboardEvents {
     // TODO: handle this on a background thread?
     private static func addLocalMonitorForKeyDownAndKeyUp() {
         localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp]) { (event: NSEvent) in
+            if DismissalInput.discard(event) { return nil }
             if let panel = BrowserTabsPanel.instance, panel.isVisible, event.window === panel {
                 return panel.handle(event)
             }
             let keyCode = event.type == .keyDown ? UInt32(event.keyCode) : nil
             let isARepeat = event.type == .keyDown ? event.isARepeat : false
             let shouldAbsorbEvent = handleKeyboardEvent(nil, nil, keyCode, event.modifierFlags, isARepeat, event)
+            // A key can settle a delayed hold release and close the switcher before this monitor returns it.
+            if DismissalInput.discard(event) { return nil }
             return shouldAbsorbEvent ? nil : event
         }
     }

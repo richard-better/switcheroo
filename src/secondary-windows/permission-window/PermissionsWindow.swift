@@ -3,7 +3,7 @@ import Cocoa
 /// The setup flow requires Accessibility and offers optional per-browser Automation.
 /// Closing before setup completes quits explicitly; the window has no close box.
 class PermissionsWindow: NSWindow {
-    static let contentWidth = CGFloat(470)
+    static let contentWidth = CGFloat(482)
     private static let contentInset = CGFloat(22)
     static var shared: PermissionsWindow!
     /// Whether this launch displayed the permissions flow.
@@ -106,6 +106,7 @@ class PermissionsWindow: NSWindow {
         let text = NSTextField(wrappingLabelWithString: title)
         text.translatesAutoresizingMaskIntoConstraints = false
         text.font = .systemFont(ofSize: 19.5, weight: .semibold)
+        text.isSelectable = false
         let header = NSStackView(views: [icon, text])
         header.translatesAutoresizingMaskIntoConstraints = false
         header.spacing = 14
