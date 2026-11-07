@@ -15,7 +15,7 @@ Details are in [BrowserTabsSpecs.md](src/browser-tabs/BrowserTabsSpecs.md).
 
 ## Development
 
-Build with `ai/build.sh` and test with `ai/test.sh`. To build with your own team, set `DEVELOPMENT_TEAM` in `config/local.xcconfig`. Debug builds are named `Switcheroo Dev` and use the bundle ID `me.richardb.window-switcher.dev`, so they run next to an installed release with their own preferences and permissions. Install `DerivedData/Build/Products/Debug/Switcheroo Dev.app` in `/Applications` before granting permissions.
+Build with `ai/build.sh` and test with `ai/test.sh`. To build with your own team, set `DEVELOPMENT_TEAM` and `CODE_SIGN_IDENTITY` in `config/local.xcconfig`. Debug builds are named `Switcheroo Dev` and use the bundle ID `me.richardb.window-switcher.dev`, so they run next to an installed release with their own preferences and permissions. Install `DerivedData/Build/Products/Debug/Switcheroo Dev.app` in `/Applications` before granting permissions.
 
 ## Releases
 
