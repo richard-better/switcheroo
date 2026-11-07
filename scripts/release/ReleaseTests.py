@@ -144,6 +144,9 @@ elif name == "xcrun" and args[:2] == ["notarytool", "submit"]:
     sys.exit(int(os.environ.get("NOTARY_EXIT", "0")))
 elif name == "xcrun" and args[:2] == ["notarytool", "log"]:
     pathlib.Path(args[-1]).write_text('{"issues":["invalid signature"]}')
+elif name == "xcrun" and args[:2] == ["stapler", "staple"]:
+    attempts = pathlib.Path(os.environ["COMMAND_LOG"]).read_text().count('"stapler", "staple"')
+    sys.exit(68 if attempts <= int(os.environ.get("STAPLE_FAILURES", "0")) else 0)
 elif name == "spctl":
     sys.exit(int(os.environ.get("GATEKEEPER_EXIT", "0")))
 ''')
@@ -152,7 +155,8 @@ elif name == "spctl":
             (binaries / name).symlink_to(stub)
         self.environment = dict(os.environ, PATH=f"{binaries}:{os.environ['PATH']}", RELEASE_VERSION=self.version,
                                 RELEASE_DIR=str(self.root / "release"), XCODE_BUILD_PATH=str(self.root / "products"),
-                                NOTARY_KEYCHAIN_PROFILE="fixture", COMMAND_LOG=str(self.root / "commands"))
+                                NOTARY_KEYCHAIN_PROFILE="fixture", COMMAND_LOG=str(self.root / "commands"),
+                                STAPLE_RETRY_DELAY="0")
 
     def run_notarization(self, status, **environment):
         result = subprocess.run(["bash", "scripts/package_and_notarize_release.sh"], cwd=metadata.ROOT,
@@ -169,6 +173,19 @@ elif name == "spctl":
             index = next(i for i, command in enumerate(commands) if command[:len(operation)] == operation)
             self.assertLess(packaging[0], index)
             self.assertLess(index, packaging[1])
+
+    def test_transient_staple_failure_is_retried_and_still_produces_final_archive(self):
+        result, commands = self.run_notarization("Accepted", STAPLE_FAILURES="2")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(sum(command[:3] == ["xcrun", "stapler", "staple"] for command in commands), 3)
+        self.assertEqual(sum(command[0] == "ditto" for command in commands), 2)
+
+    def test_persistent_staple_failure_stops_without_final_archive(self):
+        result, commands = self.run_notarization("Accepted", STAPLE_FAILURES="99")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(sum(command[:3] == ["xcrun", "stapler", "staple"] for command in commands), 5)
+        self.assertFalse(any(command[:3] == ["xcrun", "stapler", "validate"] for command in commands))
+        self.assertEqual(sum(command[0] == "ditto" for command in commands), 1)
 
     def test_rejected_submission_downloads_log_and_never_staples(self):
         for exit_code in ["0", "1"]:

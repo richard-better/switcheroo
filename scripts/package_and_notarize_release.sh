@@ -37,7 +37,13 @@ if [[ "$status" != Accepted ]]; then
   exit 1
 fi
 [[ "$submit_status" == 0 ]] || exit "$submit_status"
-xcrun stapler staple "$app"
+# Stapling downloads the ticket from Apple's CDN, which can lag acceptance or drop the connection.
+staple_attempt=1
+until xcrun stapler staple "$app"; do
+  if (( staple_attempt == 5 )); then echo "Stapling failed after $staple_attempt attempts" >&2; exit 1; fi
+  staple_attempt=$(( staple_attempt + 1 ))
+  sleep "${STAPLE_RETRY_DELAY:-30}"
+done
 xcrun stapler validate "$app"
 codesign --verify --deep --strict --verbose=2 "$app"
 spctl --assess --type execute --verbose=2 "$app"

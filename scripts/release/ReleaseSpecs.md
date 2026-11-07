@@ -18,7 +18,7 @@ Switcheroo's version history starts at `1.0.0`, independently of AltTab's versio
 
 The workflow runs app tests and release-tooling tests before building a universal app. Both `arm64` and `x86_64` slices must be present.
 
-Notarization must return `Accepted`. Rejections retain the submission log and stop publication. A timeout or authentication failure stops publication. The app's ticket is stapled and validated, and its signature and Gatekeeper assessment must pass before the app is packaged again.
+Notarization must return `Accepted`. Rejections retain the submission log and stop publication. A timeout or authentication failure stops publication. The app's ticket is stapled, with up to five attempts because the download from Apple can fail transiently, and validated, and its signature and Gatekeeper assessment must pass before the app is packaged again.
 
 Sparkle signs the final ZIP. `VerifyUpdate.swift` checks that signature against the built app's `SUPublicEDKey`, so an unrelated private key cannot publish an unusable update.
 
