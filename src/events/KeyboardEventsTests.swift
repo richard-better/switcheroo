@@ -1,3 +1,4 @@
+import ShortcutRecorder
 import XCTest
 import ShortcutRecorder
 
@@ -412,6 +413,44 @@ final class KeyboardEventsUtilsTests: XCTestCase {
         ModifierFlags.current = []
         handleKeyboardEvent(nil, nil, nil, [], false)
         XCTAssertEqual(ControlsTab.shortcutsActionsTriggered, ["nextWindowShortcut", "nextWindowShortcut2", "holdShortcut2"])
+    }
+
+    func testConfiguredIndexedShortcutChangesScopeWithoutReleasingOption() throws {
+        let saved = ControlsTab.shortcuts
+        defer { ControlsTab.shortcuts = saved; resetState() }
+        ControlsTab.shortcuts["nextWindowShortcut"] = try ATShortcut(
+            XCTUnwrap(Shortcut(keyEquivalent: "⌥⇥")),
+            "nextWindowShortcut",
+            .global,
+            .down,
+            0
+        )
+        ControlsTab.shortcuts["nextWindowShortcut2"] = ATShortcut(
+            Shortcut(code: .ansiGrave, modifierFlags: .option, characters: nil, charactersIgnoringModifiers: nil),
+            "nextWindowShortcut2",
+            .global,
+            .down,
+            1
+        )
+        resetState()
+        ModifierFlags.current = [.option]
+        handleKeyboardEvent(
+            KeyboardEventsTestable.globalShortcutsIds["nextWindowShortcut"],
+            .down,
+            nil,
+            nil,
+            false
+        )
+        let session = SwitcherSession.current
+        XCTAssertEqual(session?.shortcutIndex, 0)
+        handleKeyboardEvent(nil, nil, UInt32(kVK_ANSI_Grave), [.option], false)
+        XCTAssertTrue(SwitcherSession.current === session)
+        XCTAssertEqual(session?.shortcutIndex, 1)
+        XCTAssertEqual(ControlsTab.shortcutsActionsTriggered, ["nextWindowShortcut", "nextWindowShortcut2"])
+        ModifierFlags.current = []
+        handleKeyboardEvent(nil, nil, nil, [], false)
+        XCTAssertNil(SwitcherSession.current)
+        XCTAssertEqual(ControlsTab.shortcutsActionsTriggered.last, "holdShortcut2")
     }
 
     private func resetState() {

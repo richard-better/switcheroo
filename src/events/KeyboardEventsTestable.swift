@@ -1,5 +1,6 @@
 import Carbon.HIToolbox.Events
 import ShortcutRecorder
+import Carbon.HIToolbox.Events
 
 class KeyboardEventsTestable {
     static var globalShortcutsIds: [String: Int] {
@@ -8,6 +9,28 @@ class KeyboardEventsTestable {
         (0..<Preferences.maxShortcutCount).forEach { ids[Preferences.indexToName("holdShortcut", $0)] = Preferences.maxShortcutCount + $0 }
         ids["browserTabsShortcut"] = 2 * Preferences.maxShortcutCount
         return ids
+    }
+}
+
+/// After dismissal starts, a key still addressed to AltTab belongs to neither its closed switcher nor
+/// the target app. Let macOS deliver later keys to whichever window it actually focuses.
+enum DismissalInput {
+    private static var isDismissing = false
+
+    static func begin() { isDismissing = true }
+
+    static func cancel() { isDismissing = false }
+
+    static func discard(_ event: NSEvent) -> Bool {
+        guard isDismissing else { return false }
+        if let window = event.window, window !== TilesPanel.shared {
+            cancel()
+            return false
+        }
+        // The gate takes no focus, so AltTab can be the app receiving the Escape meant to close it.
+        if event.type == .keyDown && event.keyCode == kVK_Escape { Day15HardGatePopover.dismissOnEscape() }
+        Logger.debug { "discarded key during switcher dismissal" }
+        return true
     }
 }
 
@@ -21,6 +44,8 @@ func handleKeyboardEvent(_ globalId: Int?, _ shortcutState: ShortcutState?, _ ke
         ShortcutActions.execute("focusWindowShortcut")
         return true
     }
+    // The Escape absorption tap can consume the key before NSEvent dismissal monitors see it.
+    if keyCode == UInt32(kVK_Escape) { Day15HardGatePopover.dismissOnEscape() }
     if let event, shouldAbsorbSearchEditingKeyDown(event) {
         switch TilesView.handleSearchEditingKeyDown(event) {
         case .handled: return true

@@ -83,7 +83,7 @@ class LicenseManager {
     /// Only debug QA overlays can lock features. Normal launches always resolve to `.pro`.
     var isProLocked: Bool {
         switch state {
-        case .pro, .trial: return false
+        case .trialNotStarted, .pro, .trial: return false
         case .proExpired, .trialExpired: return true
         }
     }
@@ -108,6 +108,17 @@ class LicenseManager {
         return daysSinceTrialStart + 1
     }
 
+    var trialEndDate: Date? {
+        trialStartDate?.addingTimeInterval(Double(Self.trialDuration) * 86400)
+    }
+
+    /// `state` only follows the clock when something calls `refreshState()`, so an app left running keeps a
+    /// `.trial` state past the trial's end. Cheap: no Keychain read.
+    var trialEndedSinceLastRefresh: Bool {
+        guard case .trial = state, let trialEndDate else { return false }
+        return clock.now >= trialEndDate
+    }
+
     init(clock: Clock, keychain: Keychain, api: LicenseAPI, defaults: UserDefaults) {
         self.clock = clock
         self.keychain = keychain
@@ -125,6 +136,8 @@ class LicenseManager {
         let newState = computeState()
         if newState != state { state = newState }
     }
+
+    var onActivationSucceeded: () -> Void = {}
 
     func activate(_ licenseKey: String, completion: @escaping (Result<Void, Error>) -> Void) {
         api.activate(licenseKey) { [weak self] result in
@@ -158,7 +171,9 @@ class LicenseManager {
                         self.defaults.set(email, forKey: Self.customerEmailKey)
                     }
                     self.onBeforeProUnlock()
+                    let newlyActivated = self.state != .pro
                     self.state = .pro
+                    if newlyActivated { self.onActivationSucceeded() }
                     completion(.success(()))
                 case .failure(let error):
                     completion(.failure(error))
@@ -203,20 +218,26 @@ class LicenseManager {
 
     func computeState() -> LicenseState {
         #if DEBUG
-        if hasMockedLicense { return state }
+        if hasMockedLicense { return mockedTrialStartDate.map(trialState) ?? state }
         #endif
         return .pro
     }
 
     #if DEBUG
-    /// `day` is 1-based: day 1 is the day the trial started.
+    private func trialState(_ trialStart: Date) -> LicenseState {
+        let daysSinceTrialStart = Int(clock.now.timeIntervalSince(trialStart) / (24 * 60 * 60))
+        guard daysSinceTrialStart < Self.trialDuration else { return .trialExpired }
+        return .trial(daysRemaining: Self.trialDuration - daysSinceTrialStart)
+    }
+
+    /// `day` is 1-based: day 1 is the day the trial started. The mocked trial then follows `clock` on
+    /// `refreshState()`, like a real one.
     func mockTrialDay(_ day: Int) {
         hasMockedLicense = true
         mockedTrialStartDate = clock.now.addingTimeInterval(-Double(day - 1) * 86400)
         mockedCustomerEmail = nil
         mockedVariant = nil
-        let daysRemaining = Self.trialDuration - (day - 1)
-        state = daysRemaining > 0 ? .trial(daysRemaining: daysRemaining) : .trialExpired
+        state = trialState(mockedTrialStartDate!)
     }
 
     func mockProUser() {

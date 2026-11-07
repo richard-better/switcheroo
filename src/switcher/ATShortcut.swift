@@ -68,7 +68,7 @@ class ATShortcut {
             if triggerPhase == .up, let browserIndex = BrowserTabsPanel.activeShortcutIndex {
                 return index == browserIndex && BrowserTabsPanel.switchesOnRelease
             }
-            if triggerPhase == .down, session == nil || index == nil || index == session?.shortcutIndex {
+            if triggerPhase == .down, session == nil || index == nil || index == session?.shortcutIndex || id.hasPrefix("nextWindowShortcut") {
                 return true
             }
             if triggerPhase == .up, let session, index == nil || index == session.shortcutIndex,
