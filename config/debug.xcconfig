@@ -2,7 +2,12 @@
 
 #include "base.xcconfig"
 
-CODE_SIGN_IDENTITY = Apple Development
+// Separate identity, so a dev build runs next to the installed release without sharing its
+// preferences or TCC grants. Release keeps the identity in base.xcconfig (see AGENTS.md).
+PRODUCT_NAME = Switcheroo Dev
+PRODUCT_MODULE_NAME = Switcheroo
+PRODUCT_BUNDLE_IDENTIFIER = me.richardb.window-switcher.dev
+CODE_SIGN_IDENTITY = Apple Development: Richard Borcsik (DUHPS39849) // the bare "Apple Development" is ambiguous for codesign when a keychain holds certificates from other teams
 DEVELOPMENT_TEAM = S64PDPJKMJ
 SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG // for macro `#if DEBUG`
 OTHER_SWIFT_FLAGS = -driver-time-compilation -Xfrontend -warn-long-function-bodies=250 -Xfrontend -warn-long-expression-type-checking=250 // find slow compilation areas
