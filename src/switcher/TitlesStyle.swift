@@ -10,11 +10,14 @@ struct TitlesStyle {
     static let rowCornerRadius = CGFloat(10)
     static let rowPadding = CGFloat(6)
     static let selectionBorderWidth = CGFloat(0)
-    static var selectionBackground: NSColor {
+    static var selectionBackground: NSColor { fill(darkAlpha: 0.20, lightAlpha: 0.18) }
+    static var hoverBackground: NSColor { fill(darkAlpha: 0.10, lightAlpha: 0.09) }
+
+    private static func fill(darkAlpha: CGFloat, lightAlpha: CGFloat) -> NSColor {
         NSColor(name: nil) { appearance in
             appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-                ? .white.withAlphaComponent(0.10)
-                : .black.withAlphaComponent(0.09)
+                ? .white.withAlphaComponent(darkAlpha)
+                : .black.withAlphaComponent(lightAlpha)
         }
     }
 

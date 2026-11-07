@@ -40,7 +40,7 @@ class Appearance {
 
     static var highlightHoveredBackgroundColor: NSColor {
         currentStyle == .titles
-            ? TitlesStyle.selectionBackground.withAlphaComponent(0.5)
+            ? TitlesStyle.hoverBackground
             : NSColor.systemAccentColor.withAlphaComponent(0.1)
     }
 
