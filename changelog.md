@@ -2,6 +2,17 @@
 
 Switcheroo uses its own release versions. The inherited release history is preserved in the [AltTab changelog](docs/upstream-alt-tab-changelog.md).
 
+## 1.1.0
+
+### Improvements
+
+- Make the selected row easier to see in the window and browser tab switchers, and keep a hovered row weaker than the selected one.
+- Translate the browser tab interface into all 21 languages.
+
+### Upstream
+
+Based on [AltTab 11.10.1](https://github.com/lwouis/alt-tab-macos/releases/tag/v11.10.1), including upstream changes through commit [ec4f94a8](https://github.com/lwouis/alt-tab-macos/commit/ec4f94a8). This adds upstream's fixes for shortcuts, keys typed right after a switch, window order after switching to a busy app, and new tabs briefly showing as separate windows, along with a smaller download. All included features remain available without a license.
+
 ## 1.0.0
 
 ### Features
